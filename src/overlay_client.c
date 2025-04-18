@@ -25,7 +25,7 @@
 
 #include "packets.h"
 
-#define PRINT_DEBUG 0
+#define PRINT_DEBUG 1
 
 struct overlay_data {
     uint32_t           ip;

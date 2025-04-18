@@ -28,7 +28,7 @@
 #include "node_list.h"
 #include "edge_list.h"
 
-#define PRINT_DEBUG 0
+#define PRINT_DEBUG 1
 
 #define MAX_CONF_LINE 1024
 
@@ -148,6 +148,13 @@ void handle_overlay_data(int sock, int code, void *data)
 /* Respond to heartbeat message by sending heartbeat echo */
 void handle_heartbeat(struct heartbeat_pkt *pkt)
 {
+
+    struct heartbeat_echo_pkt *resp;
+    struct node *dst_node;
+    struct sockaddr_in *dst_addr;
+    int bytes;
+    int ret;
+
     if (pkt->hdr.type != CTRL_HEARTBEAT) {
         Alarm(PRINT, "Error: non-heartbeat msg in handle_heartbeat\n");
         return;
@@ -156,6 +163,21 @@ void handle_heartbeat(struct heartbeat_pkt *pkt)
     Alarm(DEBUG, "Got heartbeat from %d\n", pkt->hdr.src_id);
 
      /* Students fill in! */
+
+    bytes = sizeof(struct heartbeat_echo_pkt);
+    resp = malloc(bytes);
+    resp->hdr.type = CTRL_HEARTBEAT_ECHO;
+    resp->hdr.dst_id = pkt->hdr.src_id;
+    resp->hdr.src_id = pkt->hdr.dst_id;
+
+    dst_node = get_node_from_id(&Node_List, resp->hdr.dst_id);
+    dst_addr = &dst_node->ctrl_addr;
+    
+    ret = sendto(Ctrl_Sock, resp, bytes, 0, dst_addr, sizeof(struct sockaddr_in));
+    if (ret < 0) {
+        Alarm(PRINT, "Error sending heartbeat echo to node %d (port %d)\n", dst_node->id, dst_addr->sin_port);
+    }
+
 }
 
 /* Handle heartbeat echo. This indicates that the link is alive, so update our
@@ -556,6 +578,9 @@ void init_client_sock(int client_port)
 void init_link_state(void)
 {
     Alarm(DEBUG, "init link state\n");
+    // TODO schedule heartbeat event
+    // TODO schedule link state update event
+    // TODO send initial link state information
 }
 
 void init_distance_vector(void)
